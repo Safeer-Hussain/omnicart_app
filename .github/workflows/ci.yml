@@ -1,0 +1,53 @@
+name: OmniCart Enterprise CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  quality-gate:
+    name: OmniCart Code Quality & Verification Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java SDK (for Android Gradle SDK 36 verification)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter Environment
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: false
+
+      - name: Print Flutter & Dart Environment
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Install Project Dependencies
+        run: flutter pub get
+
+      - name: Verify Code Formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Static Code Analysis (Strict SDK 36 & Flutter Deprecation Handling)
+        run: flutter analyze --no-fatal-infos
+
+      - name: Execute Automated Test Suite with Code Coverage
+        run: flutter test --coverage
+
+      - name: Upload Test Coverage Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/lcov.info
