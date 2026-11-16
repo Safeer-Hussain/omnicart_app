@@ -8,27 +8,32 @@ import '../../../core/constants/seeded_catalog.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/utils/haversine.dart';
 import '../../../domain/entities/cart_item.dart';
+import '../../../domain/entities/dark_store_hub.dart';
 import '../../../domain/entities/order.dart';
 import '../../../domain/repositories/order_repository.dart';
 
 class OrderTrackerState {
   final List<CustomerOrder> orders;
   final CustomerOrder? selectedOrder;
+  final DarkStoreHub originHub;
   final bool isSimulatingDelivery;
   final double remainingDistanceKm;
   final int estimatedMinutesRemaining;
   final double currentCourierLat;
   final double currentCourierLng;
+  final double courierBearingDegrees;
   final double simulationProgress; // 0.0 to 1.0
 
   const OrderTrackerState({
     required this.orders,
     this.selectedOrder,
+    this.originHub = DarkStoreHub.defaultHub,
     this.isSimulatingDelivery = false,
     this.remainingDistanceKm = 8.4,
     this.estimatedMinutesRemaining = 15,
     this.currentCourierLat = AppConstants.darkStoreLatitude,
     this.currentCourierLng = AppConstants.darkStoreLongitude,
+    this.courierBearingDegrees = 135.0,
     this.simulationProgress = 0.0,
   });
 
@@ -40,11 +45,13 @@ class OrderTrackerState {
     List<CustomerOrder>? orders,
     CustomerOrder? selectedOrder,
     bool clearSelectedOrder = false,
+    DarkStoreHub? originHub,
     bool? isSimulatingDelivery,
     double? remainingDistanceKm,
     int? estimatedMinutesRemaining,
     double? currentCourierLat,
     double? currentCourierLng,
+    double? courierBearingDegrees,
     double? simulationProgress,
   }) {
     return OrderTrackerState(
@@ -52,12 +59,15 @@ class OrderTrackerState {
       selectedOrder: clearSelectedOrder
           ? null
           : (selectedOrder ?? this.selectedOrder),
+      originHub: originHub ?? this.originHub,
       isSimulatingDelivery: isSimulatingDelivery ?? this.isSimulatingDelivery,
       remainingDistanceKm: remainingDistanceKm ?? this.remainingDistanceKm,
       estimatedMinutesRemaining:
           estimatedMinutesRemaining ?? this.estimatedMinutesRemaining,
       currentCourierLat: currentCourierLat ?? this.currentCourierLat,
       currentCourierLng: currentCourierLng ?? this.currentCourierLng,
+      courierBearingDegrees:
+          courierBearingDegrees ?? this.courierBearingDegrees,
       simulationProgress: simulationProgress ?? this.simulationProgress,
     );
   }
@@ -127,6 +137,10 @@ class OrderTrackerNotifier extends Notifier<OrderTrackerState> {
     }
 
     final activeOrder = orders.first;
+    final nearestHub = HaversineUtil.findNearestDarkStore(
+      activeOrder.courierLat,
+      activeOrder.courierLng,
+    );
     final dist = HaversineUtil.distanceInKm(
       activeOrder.courierLat,
       activeOrder.courierLng,
@@ -134,12 +148,20 @@ class OrderTrackerNotifier extends Notifier<OrderTrackerState> {
       AppConstants.defaultCustomerLongitude,
     );
     final eta = HaversineUtil.estimatedDeliveryMinutes(dist);
+    final bearing = HaversineUtil.bearingBetween(
+      activeOrder.courierLat,
+      activeOrder.courierLng,
+      AppConstants.defaultCustomerLatitude,
+      AppConstants.defaultCustomerLongitude,
+    );
 
     state = state.copyWith(
       orders: orders,
       selectedOrder: activeOrder,
+      originHub: nearestHub,
       currentCourierLat: activeOrder.courierLat,
       currentCourierLng: activeOrder.courierLng,
+      courierBearingDegrees: bearing,
       simulationProgress: activeOrder.courierProgress,
       remainingDistanceKm: dist,
       estimatedMinutesRemaining: eta,
@@ -151,6 +173,10 @@ class OrderTrackerNotifier extends Notifier<OrderTrackerState> {
       (o) => o.id == orderId,
       orElse: () => state.orders.first,
     );
+    final nearestHub = HaversineUtil.findNearestDarkStore(
+      order.courierLat,
+      order.courierLng,
+    );
     final dist = HaversineUtil.distanceInKm(
       order.courierLat,
       order.courierLng,
@@ -158,11 +184,19 @@ class OrderTrackerNotifier extends Notifier<OrderTrackerState> {
       AppConstants.defaultCustomerLongitude,
     );
     final eta = HaversineUtil.estimatedDeliveryMinutes(dist);
+    final bearing = HaversineUtil.bearingBetween(
+      order.courierLat,
+      order.courierLng,
+      AppConstants.defaultCustomerLatitude,
+      AppConstants.defaultCustomerLongitude,
+    );
 
     state = state.copyWith(
       selectedOrder: order,
+      originHub: nearestHub,
       currentCourierLat: order.courierLat,
       currentCourierLng: order.courierLng,
+      courierBearingDegrees: bearing,
       simulationProgress: order.courierProgress,
       remainingDistanceKm: dist,
       estimatedMinutesRemaining: eta,
@@ -196,7 +230,7 @@ class OrderTrackerNotifier extends Notifier<OrderTrackerState> {
         state = state.copyWith(isSimulatingDelivery: false);
       }
 
-      // Calculate courier position along route
+      // Calculate courier position and bearing along route
       final pos = _interpolatePosition(newProgress);
       final dist = HaversineUtil.distanceInKm(
         pos.latitude,
@@ -205,6 +239,12 @@ class OrderTrackerNotifier extends Notifier<OrderTrackerState> {
         AppConstants.defaultCustomerLongitude,
       );
       final eta = HaversineUtil.estimatedDeliveryMinutes(dist);
+      final bearing = HaversineUtil.bearingBetween(
+        pos.latitude,
+        pos.longitude,
+        AppConstants.defaultCustomerLatitude,
+        AppConstants.defaultCustomerLongitude,
+      );
 
       OrderFulfillmentStatus status = OrderFulfillmentStatus.confirmed;
       if (newProgress >= 1.0) {
@@ -231,6 +271,7 @@ class OrderTrackerNotifier extends Notifier<OrderTrackerState> {
         selectedOrder: updatedOrder,
         currentCourierLat: pos.latitude,
         currentCourierLng: pos.longitude,
+        courierBearingDegrees: bearing,
         simulationProgress: newProgress,
         remainingDistanceKm: dist,
         estimatedMinutesRemaining: eta,

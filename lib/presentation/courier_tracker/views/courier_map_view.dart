@@ -204,6 +204,24 @@ class _CourierMapViewState extends ConsumerState<CourierMapView> {
                     Row(
                       children: [
                         Icon(
+                          Icons.hub_outlined,
+                          size: 14,
+                          color: colorScheme.tertiary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          trackerState.originHub.code,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Icon(
                           Icons.timer_outlined,
                           size: 16,
                           color: colorScheme.secondary,
@@ -213,7 +231,7 @@ class _CourierMapViewState extends ConsumerState<CourierMapView> {
                           selectedOrder.status ==
                                   OrderFulfillmentStatus.delivered
                               ? 'Delivered'
-                              : 'ETA: ~${trackerState.estimatedMinutesRemaining} mins',
+                              : 'ETA: ~${trackerState.estimatedMinutesRemaining}m',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -332,20 +350,35 @@ class _CourierMapViewState extends ConsumerState<CourierMapView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${trackerState.remainingDistanceKm.toStringAsFixed(1)} km remaining',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: colorScheme.onSurface,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${trackerState.remainingDistanceKm.toStringAsFixed(1)} km remaining',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        Text(
+                          trackerState.originHub.code,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                      ],
                     ),
                     Text(
-                      'ETA: ~${trackerState.estimatedMinutesRemaining} mins',
+                      'ETA: ~${trackerState.estimatedMinutesRemaining} mins (${trackerState.originHub.name})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 11,
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -413,9 +446,9 @@ class _CourierMapViewState extends ConsumerState<CourierMapView> {
     ColorScheme colorScheme,
     OrderTrackerState trackerState,
   ) {
-    const darkStorePos = LatLng(
-      AppConstants.darkStoreLatitude,
-      AppConstants.darkStoreLongitude,
+    final darkStorePos = LatLng(
+      trackerState.originHub.latitude,
+      trackerState.originHub.longitude,
     );
     const customerPos = LatLng(
       AppConstants.defaultCustomerLatitude,

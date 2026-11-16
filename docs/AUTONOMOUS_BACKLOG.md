@@ -92,3 +92,20 @@ This backlog defines the 25 granular engineering sprints executed autonomously b
   - Automated GitHub Actions workflow (`.github/workflows/ci.yml`).
   - Sprint gatekeeper script (`tool/sprint_gate.dart`) enforcement.
   - Zero analyzer issues (`flutter analyze --no-fatal-infos`).
+
+## Phase 6: Enterprise Expansion & Omni-Channel Telemetry (Sprints 26-30)
+- [x] **Sprint 26: Multi-Store Dark-Store Route Geofencing & Dynamic Delivery ETA Prediction**
+  - City-wide dark store network (`DarkStoreHub.networkHubs`) supporting Gulberg Central A1, DHA Phase 6 B2, and Johar Town C3.
+  - Geodesic Haversine nearest-hub optimization algorithm (`HaversineUtil.findNearestDarkStore`).
+  - Dynamic route bearing calculation (`HaversineUtil.bearingBetween`) with live courier navigation heading.
+  - Integration into `OrderTrackerState` and `courier_map_view.dart` with origin hub badging and marker positioning.
+  - Automated unit test suite (`test/unit/haversine_test.dart`) bringing test matrix to 33 automated tests.
+- [ ] **Sprint 27: Cold-Chain Telemetry Logging & Temperature Deviation Alerts**
+  - Historical temperature logging in SQLite for refrigerated perishables.
+  - Automated alert trigger when cold-zone exceeds threshold (>4.0°C).
+- [ ] **Sprint 28: Multi-Currency Dynamic FX Sync & Offline Exchange Caching**
+  - Dynamic currency conversion engine with cached offline FX rates (USD, EUR, GBP, PKR).
+- [ ] **Sprint 29: In-Store Self-Checkout Barcode Batch Cart Mode**
+  - Bulk scanning queue in POS scanner for fast queue-busting in physical stores.
+- [ ] **Sprint 30: End-to-End Enterprise Stress Testing & Offline Simulation**
+  - Stress testing with 500+ simulated SKUs and synthetic network drops.

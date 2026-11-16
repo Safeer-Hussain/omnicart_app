@@ -22,6 +22,9 @@ void main() {
       final state = container.read(orderTrackerProvider);
       expect(state.orders.isNotEmpty, isTrue);
       expect(state.selectedOrder, isNotNull);
+      expect(state.originHub, isNotNull);
+      expect(state.originHub.code, isNotEmpty);
+      expect(state.courierBearingDegrees, greaterThanOrEqualTo(0));
       expect(state.remainingDistanceKm, greaterThan(0));
       expect(state.estimatedMinutesRemaining, greaterThan(0));
     },
