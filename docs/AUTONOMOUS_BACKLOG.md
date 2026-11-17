@@ -100,9 +100,12 @@ This backlog defines the 25 granular engineering sprints executed autonomously b
   - Dynamic route bearing calculation (`HaversineUtil.bearingBetween`) with live courier navigation heading.
   - Integration into `OrderTrackerState` and `courier_map_view.dart` with origin hub badging and marker positioning.
   - Automated unit test suite (`test/unit/haversine_test.dart`) bringing test matrix to 33 automated tests.
-- [ ] **Sprint 27: Cold-Chain Telemetry Logging & Temperature Deviation Alerts**
-  - Historical temperature logging in SQLite for refrigerated perishables.
-  - Automated alert trigger when cold-zone exceeds threshold (>4.0°C).
+- [x] **Sprint 27: Cold-Chain Telemetry Logging & Temperature Deviation Alerts**
+  - Historical temperature logging in SQLite (`cold_chain_logs` table) for refrigerated perishables.
+  - Automated alert trigger when cold-zone exceeds safety threshold (1.0°C - 4.0°C).
+  - Visual deviation indicator and warning alert pill embedded in POS hardware `TelemetryStrip`.
+  - Clean Architecture `ColdChainRepository` pattern registered in `get_it` DI and mocked for tests.
+  - Automated test suite (`test/unit/cold_chain_repository_test.dart`) expanding automated matrix to 37 tests.
 - [ ] **Sprint 28: Multi-Currency Dynamic FX Sync & Offline Exchange Caching**
   - Dynamic currency conversion engine with cached offline FX rates (USD, EUR, GBP, PKR).
 - [ ] **Sprint 29: In-Store Self-Checkout Barcode Batch Cart Mode**

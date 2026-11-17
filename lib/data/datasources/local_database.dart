@@ -5,6 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../core/constants/seeded_catalog.dart';
 import '../../domain/entities/cart_item.dart';
+import '../../domain/entities/cold_chain_log.dart';
 import '../../domain/entities/delivery_address.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/entities/product.dart';
@@ -118,6 +119,19 @@ class AppDatabase {
         postal_code TEXT NOT NULL,
         phone_number TEXT NOT NULL,
         is_default INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS cold_chain_logs (
+        id TEXT PRIMARY KEY,
+        warehouse_zone TEXT NOT NULL,
+        sensor_id TEXT NOT NULL,
+        temperature_celsius REAL NOT NULL,
+        is_deviation INTEGER NOT NULL,
+        active_pickers INTEGER NOT NULL,
+        timestamp INTEGER NOT NULL,
+        status TEXT NOT NULL
       )
     ''');
   }
@@ -471,5 +485,36 @@ class AppDatabase {
       address.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  // --- COLD-CHAIN TELEMETRY LOGS ---
+  Future<void> insertColdChainLog(ColdChainLog log) async {
+    final db = await database;
+    await db.insert(
+      'cold_chain_logs',
+      log.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<ColdChainLog>> getColdChainLogs({int limit = 20}) async {
+    final db = await database;
+    final rows = await db.query(
+      'cold_chain_logs',
+      orderBy: 'timestamp DESC',
+      limit: limit,
+    );
+    return rows.map((r) => ColdChainLog.fromMap(r)).toList();
+  }
+
+  Future<List<ColdChainLog>> getColdChainDeviations() async {
+    final db = await database;
+    final rows = await db.query(
+      'cold_chain_logs',
+      where: 'is_deviation = ?',
+      whereArgs: [1],
+      orderBy: 'timestamp DESC',
+    );
+    return rows.map((r) => ColdChainLog.fromMap(r)).toList();
   }
 }

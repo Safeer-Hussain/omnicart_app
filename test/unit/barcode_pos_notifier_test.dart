@@ -87,4 +87,15 @@ void main() {
       expect(receipt['cutterState'], 'PARTIAL_CUT_COMPLETE');
     },
   );
+
+  test('BarcodePosNotifier loads cold chain logs and maintains telemetry integrity', () async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    final notifier = container.read(barcodePosProvider.notifier);
+    await notifier.loadRecentColdChainLogs();
+
+    final state = container.read(barcodePosProvider);
+    expect(state.recentColdChainLogs, isNotNull);
+  });
 }

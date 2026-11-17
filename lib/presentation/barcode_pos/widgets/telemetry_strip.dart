@@ -4,20 +4,36 @@ import '../../../domain/entities/dark_store_metric.dart';
 
 class TelemetryStrip extends StatelessWidget {
   final DarkStoreMetric metric;
+  final bool hasColdChainAlert;
+  final String? coldChainAlertMessage;
 
-  const TelemetryStrip({super.key, required this.metric});
+  const TelemetryStrip({
+    super.key,
+    required this.metric,
+    this.hasColdChainAlert = false,
+    this.coldChainAlertMessage,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isColdChainDeviation =
+        hasColdChainAlert ||
+        metric.coldZoneTempCelsius > 4.0 ||
+        metric.coldZoneTempCelsius < 1.0;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outlineVariant),
+        border: Border.all(
+          color: isColdChainDeviation
+              ? colorScheme.error
+              : colorScheme.outlineVariant,
+          width: isColdChainDeviation ? 1.5 : 1.0,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,7 +50,9 @@ class TelemetryStrip extends StatelessWidget {
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: colorScheme.primary,
+                        color: isColdChainDeviation
+                            ? colorScheme.error
+                            : colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -45,7 +63,9 @@ class TelemetryStrip extends StatelessWidget {
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1.1,
-                        color: colorScheme.primary,
+                        color: isColdChainDeviation
+                            ? colorScheme.error
+                            : colorScheme.primary,
                       ),
                     ),
                   ],
@@ -85,6 +105,7 @@ class TelemetryStrip extends StatelessWidget {
                           '${metric.coldZoneTempCelsius.toStringAsFixed(1)} °C',
                       icon: Icons.ac_unit,
                       colorScheme: colorScheme,
+                      isWarning: isColdChainDeviation,
                     ),
                   ),
                   Expanded(
@@ -108,6 +129,38 @@ class TelemetryStrip extends StatelessWidget {
               ),
             ),
           ),
+
+          if (isColdChainDeviation) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    size: 14,
+                    color: colorScheme.onErrorContainer,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      coldChainAlertMessage ??
+                          'Cold-chain temperature deviation: ${metric.coldZoneTempCelsius.toStringAsFixed(1)} °C exceeds 4.0 °C safety limit.',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onErrorContainer,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -119,26 +172,32 @@ class TelemetryStrip extends StatelessWidget {
     required IconData icon,
     required ColorScheme colorScheme,
     bool isStatus = false,
+    bool isWarning = false,
   }) {
+    final iconColor = isWarning
+        ? colorScheme.error
+        : (isStatus ? colorScheme.primary : colorScheme.secondary);
+
+    final textColor = isWarning ? colorScheme.error : colorScheme.onSurface;
+
     return Column(
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: isStatus ? colorScheme.primary : colorScheme.secondary,
-        ),
+        Icon(icon, size: 16, color: iconColor),
         const SizedBox(height: 2),
         Text(
           value,
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w800,
-            color: colorScheme.onSurface,
+            color: textColor,
           ),
         ),
         Text(
           label,
-          style: TextStyle(fontSize: 9, color: colorScheme.onSurfaceVariant),
+          style: TextStyle(
+            fontSize: 9,
+            color: isWarning ? colorScheme.error : colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );

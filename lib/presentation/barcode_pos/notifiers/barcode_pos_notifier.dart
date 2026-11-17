@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/di/injection.dart';
 import '../../../core/platform/pos_hardware_bridge.dart';
+import '../../../domain/entities/cold_chain_log.dart';
 import '../../../domain/entities/dark_store_metric.dart';
 import '../../../domain/entities/product.dart';
 import '../../../domain/repositories/catalog_repository.dart';
+import '../../../domain/repositories/cold_chain_repository.dart';
 
 class BarcodePosState {
   final bool isScanning;
@@ -16,6 +18,9 @@ class BarcodePosState {
   final bool isNfcProcessing;
   final Map<String, dynamic>? nfcResult;
   final String? scanFeedbackMessage;
+  final bool hasColdChainAlert;
+  final String? coldChainAlertMessage;
+  final List<ColdChainLog> recentColdChainLogs;
 
   const BarcodePosState({
     this.isScanning = false,
@@ -25,6 +30,9 @@ class BarcodePosState {
     this.isNfcProcessing = false,
     this.nfcResult,
     this.scanFeedbackMessage,
+    this.hasColdChainAlert = false,
+    this.coldChainAlertMessage,
+    this.recentColdChainLogs = const [],
   });
 
   factory BarcodePosState.initial() {
@@ -43,6 +51,10 @@ class BarcodePosState {
     bool clearNfcResult = false,
     String? scanFeedbackMessage,
     bool clearFeedbackMessage = false,
+    bool? hasColdChainAlert,
+    String? coldChainAlertMessage,
+    bool clearColdChainAlert = false,
+    List<ColdChainLog>? recentColdChainLogs,
   }) {
     return BarcodePosState(
       isScanning: isScanning ?? this.isScanning,
@@ -58,6 +70,11 @@ class BarcodePosState {
       scanFeedbackMessage: clearFeedbackMessage
           ? null
           : (scanFeedbackMessage ?? this.scanFeedbackMessage),
+      hasColdChainAlert: hasColdChainAlert ?? this.hasColdChainAlert,
+      coldChainAlertMessage: clearColdChainAlert
+          ? null
+          : (coldChainAlertMessage ?? this.coldChainAlertMessage),
+      recentColdChainLogs: recentColdChainLogs ?? this.recentColdChainLogs,
     );
   }
 }
@@ -65,15 +82,17 @@ class BarcodePosState {
 class BarcodePosNotifier extends Notifier<BarcodePosState> {
   late final PosHardwareBridge _posBridge;
   late final CatalogRepository _catalogRepository;
+  late final ColdChainRepository _coldChainRepository;
   StreamSubscription<DarkStoreMetric>? _telemetrySub;
 
   @override
   BarcodePosState build() {
     _posBridge = sl<PosHardwareBridge>();
     _catalogRepository = sl<CatalogRepository>();
+    _coldChainRepository = sl<ColdChainRepository>();
 
     _telemetrySub = _posBridge.telemetryStream.listen((metric) {
-      state = state.copyWith(liveTelemetry: metric);
+      _processIncomingTelemetry(metric);
     });
 
     ref.onDispose(() {
@@ -81,6 +100,41 @@ class BarcodePosNotifier extends Notifier<BarcodePosState> {
     });
 
     return BarcodePosState.initial();
+  }
+
+  void _processIncomingTelemetry(DarkStoreMetric metric) {
+    final isDeviation =
+        metric.coldZoneTempCelsius > 4.0 || metric.coldZoneTempCelsius < 1.0;
+
+    final log = ColdChainLog(
+      id: 'CCL-${DateTime.now().millisecondsSinceEpoch}',
+      warehouseZone: metric.warehouseZone,
+      sensorId: 'SENSOR-CZ-01',
+      temperatureCelsius: metric.coldZoneTempCelsius,
+      isDeviation: isDeviation,
+      activePickers: metric.activePickers,
+      timestampMillis: DateTime.now().millisecondsSinceEpoch,
+      status: isDeviation ? 'DEVIATION_ALERT' : 'OPTIMAL',
+    );
+
+    _coldChainRepository.recordLog(log);
+
+    final updatedLogs = [log, ...state.recentColdChainLogs].take(20).toList();
+
+    state = state.copyWith(
+      liveTelemetry: metric,
+      hasColdChainAlert: isDeviation,
+      coldChainAlertMessage: isDeviation
+          ? 'Cold-chain deviation: ${metric.coldZoneTempCelsius.toStringAsFixed(1)} °C exceeds safe perishable threshold (1.0°C - 4.0°C).'
+          : null,
+      clearColdChainAlert: !isDeviation,
+      recentColdChainLogs: updatedLogs,
+    );
+  }
+
+  Future<void> loadRecentColdChainLogs() async {
+    final logs = await _coldChainRepository.getRecentLogs(limit: 20);
+    state = state.copyWith(recentColdChainLogs: logs);
   }
 
   Future<void> scanUpcBarcode() async {

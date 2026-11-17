@@ -6,9 +6,11 @@ import '../platform/pos_hardware_bridge.dart';
 import '../../data/datasources/local_database.dart';
 import '../../data/repositories/cart_repository_impl.dart';
 import '../../data/repositories/catalog_repository_impl.dart';
+import '../../data/repositories/cold_chain_repository_impl.dart';
 import '../../data/repositories/order_repository_impl.dart';
 import '../../domain/repositories/cart_repository.dart';
 import '../../domain/repositories/catalog_repository.dart';
+import '../../domain/repositories/cold_chain_repository.dart';
 import '../../domain/repositories/order_repository.dart';
 
 final sl = GetIt.instance;
@@ -37,4 +39,7 @@ void setupDependencyInjection() {
 
   final orderRepo = OrderRepositoryImpl(database: database);
   sl.registerSingleton<OrderRepository>(orderRepo);
+
+  final coldChainRepo = ColdChainRepositoryImpl();
+  sl.registerSingleton<ColdChainRepository>(coldChainRepo);
 }

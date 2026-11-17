@@ -3,12 +3,14 @@ import 'package:omni_cart_app/core/constants/seeded_catalog.dart';
 import 'package:omni_cart_app/core/di/injection.dart';
 import 'package:omni_cart_app/core/platform/pos_hardware_bridge.dart';
 import 'package:omni_cart_app/domain/entities/cart_item.dart';
+import 'package:omni_cart_app/domain/entities/cold_chain_log.dart';
 import 'package:omni_cart_app/domain/entities/delivery_address.dart';
 import 'package:omni_cart_app/domain/entities/order.dart';
 import 'package:omni_cart_app/domain/entities/product.dart';
 import 'package:omni_cart_app/domain/entities/review.dart';
 import 'package:omni_cart_app/domain/repositories/cart_repository.dart';
 import 'package:omni_cart_app/domain/repositories/catalog_repository.dart';
+import 'package:omni_cart_app/domain/repositories/cold_chain_repository.dart';
 import 'package:omni_cart_app/domain/repositories/order_repository.dart';
 
 class MockCatalogRepository implements CatalogRepository {
@@ -127,6 +129,25 @@ class MockOrderRepository implements OrderRepository {
   }
 }
 
+class MockColdChainRepository implements ColdChainRepository {
+  List<ColdChainLog> logs = [];
+
+  @override
+  Future<void> recordLog(ColdChainLog log) async {
+    logs.insert(0, log);
+  }
+
+  @override
+  Future<List<ColdChainLog>> getRecentLogs({int limit = 20}) async {
+    return logs.take(limit).toList();
+  }
+
+  @override
+  Future<List<ColdChainLog>> getDeviations() async {
+    return logs.where((l) => l.isDeviation).toList();
+  }
+}
+
 void registerMockServices() {
   SharedPreferences.setMockInitialValues({});
   if (sl.isRegistered<CatalogRepository>()) {
@@ -143,6 +164,11 @@ void registerMockServices() {
     sl.unregister<OrderRepository>();
   }
   sl.registerSingleton<OrderRepository>(MockOrderRepository());
+
+  if (sl.isRegistered<ColdChainRepository>()) {
+    sl.unregister<ColdChainRepository>();
+  }
+  sl.registerSingleton<ColdChainRepository>(MockColdChainRepository());
 
   if (!sl.isRegistered<PosHardwareBridge>()) {
     sl.registerSingleton<PosHardwareBridge>(PosHardwareBridge());

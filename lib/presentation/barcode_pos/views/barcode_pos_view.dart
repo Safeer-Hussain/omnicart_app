@@ -88,7 +88,11 @@ class _BarcodePosViewState extends ConsumerState<BarcodePosView>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
         // Live Telemetry Strip
-        TelemetryStrip(metric: posState.liveTelemetry),
+        TelemetryStrip(
+          metric: posState.liveTelemetry,
+          hasColdChainAlert: posState.hasColdChainAlert,
+          coldChainAlertMessage: posState.coldChainAlertMessage,
+        ),
         const SizedBox(height: 16),
 
         // Optical Barcode Viewfinder
@@ -132,7 +136,11 @@ class _BarcodePosViewState extends ConsumerState<BarcodePosView>
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             children: [
-              TelemetryStrip(metric: posState.liveTelemetry),
+              TelemetryStrip(
+                metric: posState.liveTelemetry,
+                hasColdChainAlert: posState.hasColdChainAlert,
+                coldChainAlertMessage: posState.coldChainAlertMessage,
+              ),
               const SizedBox(height: 12),
               SizedBox(
                 height: 160,
