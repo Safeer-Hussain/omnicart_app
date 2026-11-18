@@ -467,7 +467,7 @@ class _BarcodePosViewState extends ConsumerState<BarcodePosView>
                 )
               : const Icon(Icons.chevron_right),
           onTap: () async {
-            final currencyStr = currency == AppCurrency.pkr ? 'PKR' : 'USD';
+            final currencyStr = currency.code;
             final res = await ref
                 .read(barcodePosProvider.notifier)
                 .initiateNfcTapToPay(amount: 25.0, currency: currencyStr);

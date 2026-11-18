@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/theme_mode_provider.dart';
-import '../../core/utils/currency_formatter.dart';
 import '../ai_copilot/views/ai_shopping_copilot_view.dart';
 import '../barcode_pos/views/barcode_pos_view.dart';
 import '../cart_checkout/notifiers/cart_notifier.dart';
@@ -133,7 +132,7 @@ class _AdaptiveScaffoldState extends ConsumerState<AdaptiveScaffold> {
                 ref.read(currencyProvider.notifier).toggleCurrency();
               },
               child: Text(
-                currency == AppCurrency.usd ? 'USD' : 'PKR',
+                currency.code,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: isLandscape ? 11 : 13,

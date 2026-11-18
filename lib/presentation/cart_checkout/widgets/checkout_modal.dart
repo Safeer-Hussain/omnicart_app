@@ -96,7 +96,7 @@ class _CheckoutModalState extends ConsumerState<CheckoutModal> {
       if (_selectedPaymentMethod == 'NFC Tap-to-Pay') {
         final cartState = ref.read(cartProvider);
         final currency = ref.read(currencyProvider);
-        final currencyStr = currency == AppCurrency.pkr ? 'PKR' : 'USD';
+        final currencyStr = currency.code;
 
         final nfcResult = await ref
             .read(barcodePosProvider.notifier)

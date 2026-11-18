@@ -106,8 +106,11 @@ This backlog defines the 25 granular engineering sprints executed autonomously b
   - Visual deviation indicator and warning alert pill embedded in POS hardware `TelemetryStrip`.
   - Clean Architecture `ColdChainRepository` pattern registered in `get_it` DI and mocked for tests.
   - Automated test suite (`test/unit/cold_chain_repository_test.dart`) expanding automated matrix to 37 tests.
-- [ ] **Sprint 28: Multi-Currency Dynamic FX Sync & Offline Exchange Caching**
-  - Dynamic currency conversion engine with cached offline FX rates (USD, EUR, GBP, PKR).
+- [x] **Sprint 28: Multi-Currency Dynamic FX Sync & Offline Exchange Caching**
+  - Dynamic currency conversion engine with cached offline FX rates for 4 global currencies (USD, EUR, GBP, PKR).
+  - Relational `exchange_rates` SQLite storage schema and `FxRepository` Clean Architecture pattern registered in `get_it`.
+  - Multi-currency cycle switcher integrated into `adaptive_scaffold.dart` and `recruiter_debug_drawer.dart`.
+  - Automated test suite (`test/unit/fx_repository_test.dart`) expanding automated matrix to 44 tests.
 - [ ] **Sprint 29: In-Store Self-Checkout Barcode Batch Cart Mode**
   - Bulk scanning queue in POS scanner for fast queue-busting in physical stores.
 - [ ] **Sprint 30: End-to-End Enterprise Stress Testing & Offline Simulation**

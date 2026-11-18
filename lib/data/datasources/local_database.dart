@@ -7,6 +7,7 @@ import '../../core/constants/seeded_catalog.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/cold_chain_log.dart';
 import '../../domain/entities/delivery_address.dart';
+import '../../domain/entities/exchange_rate.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/review.dart';
@@ -134,6 +135,15 @@ class AppDatabase {
         status TEXT NOT NULL
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS exchange_rates (
+        code TEXT PRIMARY KEY,
+        symbol TEXT NOT NULL,
+        rate_to_usd REAL NOT NULL,
+        last_updated INTEGER NOT NULL
+      )
+    ''');
   }
 
   Future<void> seedInitialData() async {
@@ -181,6 +191,10 @@ class AppDatabase {
 
       for (final addr in SeededCatalog.defaultAddresses) {
         batch.insert('addresses', addr.toMap());
+      }
+
+      for (final rate in ExchangeRate.defaultRates) {
+        batch.insert('exchange_rates', rate.toMap());
       }
 
       await batch.commit(noResult: true);
@@ -516,5 +530,35 @@ class AppDatabase {
       orderBy: 'timestamp DESC',
     );
     return rows.map((r) => ColdChainLog.fromMap(r)).toList();
+  }
+
+  // --- EXCHANGE RATES (FX) ---
+  Future<void> insertExchangeRate(ExchangeRate rate) async {
+    final db = await database;
+    await db.insert(
+      'exchange_rates',
+      rate.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<ExchangeRate>> getExchangeRates() async {
+    final db = await database;
+    final rows = await db.query('exchange_rates');
+    if (rows.isEmpty) {
+      return ExchangeRate.defaultRates;
+    }
+    return rows.map((r) => ExchangeRate.fromMap(r)).toList();
+  }
+
+  Future<ExchangeRate?> getExchangeRate(String code) async {
+    final db = await database;
+    final rows = await db.query(
+      'exchange_rates',
+      where: 'code = ?',
+      whereArgs: [code.toUpperCase()],
+    );
+    if (rows.isEmpty) return null;
+    return ExchangeRate.fromMap(rows.first);
   }
 }

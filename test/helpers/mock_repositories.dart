@@ -5,12 +5,14 @@ import 'package:omni_cart_app/core/platform/pos_hardware_bridge.dart';
 import 'package:omni_cart_app/domain/entities/cart_item.dart';
 import 'package:omni_cart_app/domain/entities/cold_chain_log.dart';
 import 'package:omni_cart_app/domain/entities/delivery_address.dart';
+import 'package:omni_cart_app/domain/entities/exchange_rate.dart';
 import 'package:omni_cart_app/domain/entities/order.dart';
 import 'package:omni_cart_app/domain/entities/product.dart';
 import 'package:omni_cart_app/domain/entities/review.dart';
 import 'package:omni_cart_app/domain/repositories/cart_repository.dart';
 import 'package:omni_cart_app/domain/repositories/catalog_repository.dart';
 import 'package:omni_cart_app/domain/repositories/cold_chain_repository.dart';
+import 'package:omni_cart_app/domain/repositories/fx_repository.dart';
 import 'package:omni_cart_app/domain/repositories/order_repository.dart';
 
 class MockCatalogRepository implements CatalogRepository {
@@ -148,6 +150,39 @@ class MockColdChainRepository implements ColdChainRepository {
   }
 }
 
+class MockFxRepository implements FxRepository {
+  List<ExchangeRate> rates = List.from(ExchangeRate.defaultRates);
+
+  @override
+  Future<List<ExchangeRate>> getRates() async => List.from(rates);
+
+  @override
+  Future<ExchangeRate?> getRate(String currencyCode) async {
+    try {
+      return rates.firstWhere((r) => r.code == currencyCode.toUpperCase());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> updateRates(List<ExchangeRate> newRates) async {
+    for (final nr in newRates) {
+      final idx = rates.indexWhere((r) => r.code == nr.code);
+      if (idx != -1) {
+        rates[idx] = nr;
+      } else {
+        rates.add(nr);
+      }
+    }
+  }
+
+  @override
+  Future<List<ExchangeRate>> syncLatestRates() async {
+    return List.from(rates);
+  }
+}
+
 void registerMockServices() {
   SharedPreferences.setMockInitialValues({});
   if (sl.isRegistered<CatalogRepository>()) {
@@ -169,6 +204,11 @@ void registerMockServices() {
     sl.unregister<ColdChainRepository>();
   }
   sl.registerSingleton<ColdChainRepository>(MockColdChainRepository());
+
+  if (sl.isRegistered<FxRepository>()) {
+    sl.unregister<FxRepository>();
+  }
+  sl.registerSingleton<FxRepository>(MockFxRepository());
 
   if (!sl.isRegistered<PosHardwareBridge>()) {
     sl.registerSingleton<PosHardwareBridge>(PosHardwareBridge());

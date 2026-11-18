@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../core/utils/app_feedback.dart';
-import '../../core/utils/currency_formatter.dart';
 import '../catalog/notifiers/catalog_notifier.dart';
 
 class RecruiterDebugDrawer extends ConsumerStatefulWidget {
@@ -134,16 +133,14 @@ class _RecruiterDebugDrawerState extends ConsumerState<RecruiterDebugDrawer> {
                 color: colorScheme.secondary,
               ),
               title: Text(
-                'Currency Toggle (USD / PKR)',
+                'Multi-Currency (${currency.code})',
                 style: theme.textTheme.bodyMedium,
               ),
               trailing: OutlinedButton(
                 onPressed: () {
                   ref.read(currencyProvider.notifier).toggleCurrency();
                 },
-                child: Text(
-                  currency == AppCurrency.usd ? 'USD (\$)' : 'PKR (Rs)',
-                ),
+                child: Text('${currency.code} (${currency.symbol.trim()})'),
               ),
             ),
 

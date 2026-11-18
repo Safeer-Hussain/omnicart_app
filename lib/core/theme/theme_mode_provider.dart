@@ -58,21 +58,20 @@ class CurrencyNotifier extends Notifier<AppCurrency> {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(AppConstants.prefCurrency);
     if (saved != null) {
-      state = saved == 'pkr' ? AppCurrency.pkr : AppCurrency.usd;
+      state = AppCurrency.fromCode(saved);
     }
   }
 
   Future<void> setCurrency(AppCurrency currency) async {
     state = currency;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      AppConstants.prefCurrency,
-      currency == AppCurrency.pkr ? 'pkr' : 'usd',
-    );
+    await prefs.setString(AppConstants.prefCurrency, currency.code);
   }
 
   Future<void> toggleCurrency() async {
-    final next = state == AppCurrency.usd ? AppCurrency.pkr : AppCurrency.usd;
+    const values = AppCurrency.values;
+    final currentIndex = values.indexOf(state);
+    final next = values[(currentIndex + 1) % values.length];
     await setCurrency(next);
   }
 }
